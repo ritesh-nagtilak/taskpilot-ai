@@ -10,16 +10,11 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
 
-config_name = os.getenv('FLASK_ENV', 'default')
-from config import config
-app.config.from_object(config[config_name])
-
-DATABASE = app.config['DATABASE_URL']
-
+# Database initialization
 def init_db():
-
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect('taskpilot.db')
     cursor = conn.cursor()
     
     cursor.execute('''
@@ -52,7 +47,7 @@ def init_db():
     conn.close()
 
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect('taskpilot.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -65,6 +60,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Chatbot logic
 def process_chatbot_message(message, user_id):
     try:
         message = message.lower().strip()
@@ -114,18 +110,21 @@ def parse_add_task(message, user_id):
     if not task_title:
         return "Please specify the task title. Example: 'Add task: Buy groceries'"
     
+    # Extract due date
     due_date = None
     if 'today' in message:
         due_date = date.today()
     elif 'tomorrow' in message:
         due_date = date.today() + timedelta(days=1)
-
+    
+    # Extract priority
     priority = 'Medium'
     if 'high' in message or 'urgent' in message:
         priority = 'High'
     elif 'low' in message:
         priority = 'Low'
     
+    # Add to database
     conn = get_db_connection()
     conn.execute(
         'INSERT INTO tasks (user_id, title, priority, due_date) VALUES (?, ?, ?, ?)',
