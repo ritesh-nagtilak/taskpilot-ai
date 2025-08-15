@@ -4,12 +4,17 @@ import sqlite3
 from datetime import date, timedelta
 import re
 from functools import wraps
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-in-production'
+app.secret_key = os.getenv('SECRET_KEY')
+DATABASE = os.getenv('DATABASE_URL', 'instance/taskpilot.db')
 
 def init_db():
-    conn = sqlite3.connect('instance/taskpilot.db')
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
     cursor.execute('''
@@ -40,6 +45,7 @@ def init_db():
 
     conn.commit()
     conn.close()
+
 
 def get_db_connection():
     conn = sqlite3.connect('instance/taskpilot.db')
