@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Edit Task{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Edit Task</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Task Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ task.title }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ task.description or '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="General" {{ 'selected' if task.category == 'General' else '' }}>General</option>
+                                    <option value="Work" {{ 'selected' if task.category == 'Work' else '' }}>Work</option>
+                                    <option value="Personal" {{ 'selected' if task.category == 'Personal' else '' }}>Personal</option>
+                                    <option value="Health" {{ 'selected' if task.category == 'Health' else '' }}>Health</option>
+                                    <option value="Education" {{ 'selected' if task.category == 'Education' else '' }}>Education</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="Low" {{ 'selected' if task.priority == 'Low' else '' }}>Low</option>
+                                    <option value="Medium" {{ 'selected' if task.priority == 'Medium' else '' }}>Medium</option>
+                                    <option value="High" {{ 'selected' if task.priority == 'High' else '' }}>High</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="due_date" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="due_date" name="due_date" 
+                               value="{{ task.due_date or '' }}">
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Update Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

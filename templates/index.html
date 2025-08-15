@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto text-center">
+        <h1 class="display-4 fw-bold text-primary mb-4">
+            Welcome to TaskPilot
+        </h1>
+        <p class="lead mb-4">
+            Your smart task management companion with AI-powered assistance.
+        </p>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                Get Started
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg px-4">
+                Sign In
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h3 class="text-center mb-4">Features</h3>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-chat-dots text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h5>AI Assistant</h5>
+                        <p>Natural language task management with smart chatbot</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-speedometer2 text-success mb-3" style="font-size: 3rem;"></i>
+                        <h5>Smart Dashboard</h5>
+                        <p>Visual task tracking with statistics and insights</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-phone text-info mb-3" style="font-size: 3rem;"></i>
+                        <h5>Mobile Ready</h5>
+                        <p>Responsive design that works on all devices</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
