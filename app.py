@@ -10,13 +10,21 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')
-DATABASE = os.getenv('DATABASE_URL', '/var/data/taskpilot.db')
+
+config_name = os.getenv('FLASK_ENV', 'default')
+from config import config
+app.config.from_object(config[config_name])
+
+DATABASE = app.config['DATABASE_URL']
 
 def init_db():
+    db_dir = os.path.dirname(DATABASE)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+    
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +34,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-
+    
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,13 +50,12 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
-
+    
     conn.commit()
     conn.close()
 
-
 def get_db_connection():
-    conn = sqlite3.connect('instance/taskpilot.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -64,7 +71,7 @@ def login_required(f):
 def process_chatbot_message(message, user_id):
     try:
         message = message.lower().strip()
-
+        
         if any(word in message for word in ['show', 'list', 'display']) and 'task' in message:
             if 'today' in message:
                 return get_today_tasks(user_id)
@@ -74,22 +81,22 @@ def process_chatbot_message(message, user_id):
                 return get_pending_tasks(user_id)
             else:
                 return get_all_tasks(user_id)
-
+        
         elif any(word in message for word in ['add', 'create', 'new']) and 'task' in message:
             return parse_add_task(message, user_id)
-
+        
         elif any(word in message for word in ['complete', 'done', 'finish']) and 'task' in message:
             return parse_complete_task(message, user_id)
-
+        
         elif any(word in message for word in ['delete', 'remove']) and 'task' in message:
             return parse_delete_task(message, user_id)
-
+        
         elif any(word in message for word in ['help', 'commands']):
             return get_help_message()
-
+        
         else:
             return "I'm not sure how to help with that. Type 'help' to see available commands."
-
+            
     except Exception as e:
         return f"Sorry, I encountered an error: {str(e)}. Please try again."
 
@@ -99,17 +106,17 @@ def parse_add_task(message, user_id):
         r'create\s+(?:high\s+priority\s+|urgent\s+|low\s+priority\s+)?task:?\s*(.+)',
         r'new\s+(?:high\s+priority\s+|urgent\s+|low\s+priority\s+)?task:?\s*(.+)'
     ]
-
+    
     task_title = None
     for pattern in patterns:
         match = re.search(pattern, message, re.IGNORECASE)
         if match:
             task_title = match.group(1).strip()
             break
-
+    
     if not task_title:
         return "Please specify the task title. Example: 'Add task: Buy groceries'"
-
+    
     due_date = None
     if 'today' in message:
         due_date = date.today()
@@ -121,7 +128,7 @@ def parse_add_task(message, user_id):
         priority = 'High'
     elif 'low' in message:
         priority = 'Low'
-
+    
     conn = get_db_connection()
     conn.execute(
         'INSERT INTO tasks (user_id, title, priority, due_date) VALUES (?, ?, ?, ?)',
@@ -129,7 +136,7 @@ def parse_add_task(message, user_id):
     )
     conn.commit()
     conn.close()
-
+    
     due_info = f" for {due_date}" if due_date else ""
     return f"✅ Task added: '{task_title}' ({priority} priority){due_info}"
 
@@ -143,7 +150,7 @@ def parse_complete_task(message, user_id):
             (task_id, user_id)
         )
         conn.commit()
-
+        
         if result.rowcount > 0:
             task = conn.execute('SELECT title FROM tasks WHERE id = ?', (task_id,)).fetchone()
             conn.close()
@@ -151,7 +158,7 @@ def parse_complete_task(message, user_id):
         else:
             conn.close()
             return "Task not found."
-
+    
     return "Please specify task ID. Example: 'Complete task 1'"
 
 def parse_delete_task(message, user_id):
@@ -161,7 +168,7 @@ def parse_delete_task(message, user_id):
         conn = get_db_connection()
         task = conn.execute('SELECT title FROM tasks WHERE id = ? AND user_id = ?', 
                           (task_id, user_id)).fetchone()
-
+        
         if task:
             conn.execute('DELETE FROM tasks WHERE id = ? AND user_id = ?', (task_id, user_id))
             conn.commit()
@@ -170,7 +177,7 @@ def parse_delete_task(message, user_id):
         else:
             conn.close()
             return "Task not found."
-
+    
     return "Please specify task ID. Example: 'Delete task 1'"
 
 def get_today_tasks(user_id):
@@ -180,15 +187,15 @@ def get_today_tasks(user_id):
         (user_id, str(date.today()))
     ).fetchall()
     conn.close()
-
+    
     if not tasks:
         return "No tasks due today."
-
+    
     task_list = "📅 **Today's Tasks:**\n"
     for task in tasks:
         status = "✅" if task['is_completed'] else "⏳"
         task_list += f"{status} {task['title']} ({task['priority']})\n"
-
+    
     return task_list
 
 def get_completed_tasks(user_id):
@@ -198,14 +205,14 @@ def get_completed_tasks(user_id):
         (user_id,)
     ).fetchall()
     conn.close()
-
+    
     if not tasks:
         return "No completed tasks found."
-
+    
     task_list = "✅ **Completed Tasks:**\n"
     for task in tasks:
         task_list += f"• {task['title']}\n"
-
+    
     return task_list
 
 def get_pending_tasks(user_id):
@@ -215,15 +222,15 @@ def get_pending_tasks(user_id):
         (user_id,)
     ).fetchall()
     conn.close()
-
+    
     if not tasks:
         return "No pending tasks."
-
+    
     task_list = "⏳ **Pending Tasks:**\n"
     for task in tasks:
         due = f" (Due: {task['due_date']})" if task['due_date'] else ""
         task_list += f"• {task['title']}{due}\n"
-
+    
     return task_list
 
 def get_all_tasks(user_id):
@@ -233,13 +240,13 @@ def get_all_tasks(user_id):
         (user_id,)
     ).fetchall()
     conn.close()
-
+    
     if not tasks:
         return "No tasks yet. Try: 'Add task: Your task name'"
-
+    
     pending = sum(1 for task in tasks if not task['is_completed'])
     completed = len(tasks) - pending
-
+    
     return f"📊 **Summary:**\nTotal: {len(tasks)}\nPending: {pending}\nCompleted: {completed}"
 
 def get_help_message():
@@ -263,6 +270,7 @@ def get_help_message():
 • "Show tasks for today"
 • "Complete task 1"'''
 
+# Routes
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -275,26 +283,26 @@ def register():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-
+        
         if len(password) < 6:
             flash('Password must be at least 6 characters.', 'error')
             return render_template('register.html')
-
+        
         conn = get_db_connection()
         if conn.execute('SELECT id FROM users WHERE username = ? OR email = ?', 
                        (username, email)).fetchone():
             flash('Username or email already exists.', 'error')
             conn.close()
             return render_template('register.html')
-
+        
         conn.execute('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
                     (username, email, generate_password_hash(password)))
         conn.commit()
         conn.close()
-
+        
         flash('Registration successful!', 'success')
         return redirect(url_for('login'))
-
+    
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -302,19 +310,19 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
+        
         conn = get_db_connection()
         user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         conn.close()
-
+        
         if user and check_password_hash(user['password_hash'], password):
             session['user_id'] = user['id']
             session['username'] = user['username']
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
-
+        
         flash('Invalid credentials.', 'error')
-
+    
     return render_template('login.html')
 
 @app.route('/logout')
@@ -329,16 +337,16 @@ def dashboard():
     conn = get_db_connection()
     tasks = conn.execute('SELECT * FROM tasks WHERE user_id = ? ORDER BY is_completed, due_date ASC',
                         (session['user_id'],)).fetchall()
-
+    
     total = len(tasks)
     completed = sum(1 for task in tasks if task['is_completed'])
     pending = total - completed
     overdue = sum(1 for task in tasks if not task['is_completed'] and 
                  task['due_date'] and task['due_date'] < str(date.today()))
-
+    
     stats = {'total': total, 'completed': completed, 'pending': pending, 'overdue': overdue}
     conn.close()
-
+    
     return render_template('dashboard.html', tasks=tasks, stats=stats)
 
 @app.route('/add_task', methods=['GET', 'POST'])
@@ -355,10 +363,10 @@ def add_task():
         )
         conn.commit()
         conn.close()
-
+        
         flash('Task added successfully!', 'success')
         return redirect(url_for('dashboard'))
-
+    
     return render_template('add_task.html')
 
 @app.route('/edit_task/<int:task_id>', methods=['GET', 'POST'])
@@ -367,11 +375,11 @@ def edit_task(task_id):
     conn = get_db_connection()
     task = conn.execute('SELECT * FROM tasks WHERE id = ? AND user_id = ?',
                        (task_id, session['user_id'])).fetchone()
-
+    
     if not task:
         flash('Task not found.', 'error')
         return redirect(url_for('dashboard'))
-
+    
     if request.method == 'POST':
         conn.execute(
             '''UPDATE tasks SET title = ?, description = ?, category = ?, priority = ?, 
@@ -382,10 +390,10 @@ def edit_task(task_id):
         )
         conn.commit()
         conn.close()
-
+        
         flash('Task updated successfully!', 'success')
         return redirect(url_for('dashboard'))
-
+    
     conn.close()
     return render_template('edit_task.html', task=task)
 
@@ -397,7 +405,7 @@ def complete_task(task_id):
                 (task_id, session['user_id']))
     conn.commit()
     conn.close()
-
+    
     flash('Task status updated!', 'success')
     return redirect(url_for('dashboard'))
 
@@ -408,7 +416,7 @@ def delete_task(task_id):
     conn.execute('DELETE FROM tasks WHERE id = ? AND user_id = ?', (task_id, session['user_id']))
     conn.commit()
     conn.close()
-
+    
     flash('Task deleted!', 'success')
     return redirect(url_for('dashboard'))
 
@@ -424,10 +432,10 @@ def chatbot_message():
         data = request.get_json()
         if not data or not data.get('message'):
             return jsonify({'response': 'Please enter a message.'})
-
+        
         response = process_chatbot_message(data['message'], session['user_id'])
         return jsonify({'response': response})
-
+        
     except Exception as e:
         return jsonify({'response': f'Error: {str(e)}'}), 500
 
