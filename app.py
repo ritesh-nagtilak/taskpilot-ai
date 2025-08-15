@@ -11,7 +11,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
-DATABASE = os.getenv('DATABASE_URL', 'instance/taskpilot.db')
+DATABASE = os.getenv('DATABASE_URL', '/var/data/taskpilot.db')
 
 def init_db():
     conn = sqlite3.connect(DATABASE)
