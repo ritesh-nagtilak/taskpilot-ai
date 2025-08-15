@@ -1,10 +1,7 @@
-
 __pycache__/
 *.py[cod]
 *$py.class
-
 *.so
-
 .Python
 build/
 develop-eggs/
@@ -22,47 +19,6 @@ wheels/
 .installed.cfg
 *.egg
 
-*.manifest
-*.spec
-
-pip-log.txt
-pip-delete-this-directory.txt
-
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-*.mo
-*.pot
-
-*.log
-local_settings.py
-db.sqlite3
-
-instance/
-.webassets-cache
-
-.scrapy
-
-docs/_build/
-
-target/
-
-.ipynb_checkpoints
-
-.python-version
-
-celerybeat-schedule
-
-*.sage.py
-
 .env
 .venv
 env/
@@ -71,22 +27,16 @@ ENV/
 env.bak/
 venv.bak/
 
-.spyderproject
-.spyproject
-
-.ropeproject
-
-/site
-
-.mypy_cache/
-.dmypy.json
-dmypy.json
+*.db
+*.sqlite
+*.sqlite3
+taskpilot.db
 
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
 
 .DS_Store
 .DS_Store?
@@ -96,9 +46,8 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-*.sqlite
-*.sqlite3
-.flask_session
+instance/
+.webassets-cache
 
 setup.sh
 
