@@ -96,7 +96,6 @@ dmypy.json
 ehthumbs.db
 Thumbs.db
 
-instance/taskpilot.db
 *.sqlite
 *.sqlite3
 .flask_session
