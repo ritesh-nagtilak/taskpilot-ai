@@ -30,7 +30,6 @@ venv.bak/
 *.db
 *.sqlite
 *.sqlite3
-taskpilot.db
 
 .vscode/
 .idea/
